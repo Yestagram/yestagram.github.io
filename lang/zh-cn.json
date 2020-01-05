@@ -7,7 +7,7 @@
   "send": "发送",
   "prompt_username": "请输入用户名",
   "confirm_picture": "是否发送图片",
-  "input_voice": "请输入发送的语音文本",
+  "input_voice": "请输入要转语音的文本",
   "play_voice": "点击播放",
   "type_unknown": "未知的消息类型",
   "network_error": "网络错误,请检查网络连接"

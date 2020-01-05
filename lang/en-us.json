@@ -7,7 +7,7 @@
   "send": "Send",
   "prompt_username": "Enter your username",
   "confirm_picture": "Do you want to send this picture?",
-  "input_voice": "Enter the text you want to convert into speech.",
+  "input_voice": "Enter the text to convert into speech.",
   "play_voice": "Click to play",
   "type_unknown": "Unknown message type",
   "network_error": "Network error, please check it."
