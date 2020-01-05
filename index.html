@@ -272,15 +272,19 @@
 
         let curLang = {};
 
-        async function createConf(roomName) {
+        async function createConf(roomName, password) {
             let roomId = getRandom();
             let roomNum = +(await (await fetch(`${jsonBox}free/5e11e2d77385170017b237b6`)).json()).length;
             roomNum++;
+            let roomData = {
+                name: roomName,
+                room: roomNum,
+            };
+            if (password) {
+                roomData.password = await sha256(password);
+            }
             let created = await (await fetch(`${jsonBox}${roomId}`, {
-                'method': 'POST', 'body': JSON.stringify({
-                    name: roomName,
-                    room: roomNum,
-                }), headers: reqHead,
+                'method': 'POST', 'body': JSON.stringify(roomData), headers: reqHead,
             })).json();
             let updated = await (await fetch(`${jsonBox}free/5e11e2d77385170017b237b6`, {
                 'method': 'PUT', 'body': JSON.stringify({length: roomNum})
@@ -300,7 +304,11 @@
                 let json = await (await fetch(`${jsonBox}${hash}`)).json();
                 if (Array.isArray(json) && json.length > 0) {
                     let conf = json[0];
-                    return {name: conf.name, room: conf.room,}
+                    let roomData = {name: conf.name, room: conf.room,};
+                    if (conf.password) {
+                        roomData.password = conf.password;
+                    }
+                    return roomData;
                 } else {
                     return {room: 1,}
                 }
@@ -358,24 +366,48 @@
             let rid = conf.room || 1;
             let token = conf.token || '';
             let access_token = conf.access_token;
+            let password = '';
+            let aes = null;
+            if (conf.password) {
+                password = conf.password;
+                AES(conf.password).then(a => {
+                    aes = a;
+                })
+            }
             let socket = new WebSocket(`wss://connect.websocket.in/v2/${rid}?token=${access_token}`);
             socket.onmessage = function (e) {
                 let msg = JSON.parse(e.data);
-                appendMsg(msg, "left");
+                if (password) {
+                    aes.decode(msg.content).then(txt => {
+                        msg.content = txt;
+                        appendMsg(msg, "left");
+                    })
+                } else {
+                    appendMsg(msg, "left");
+                }
             };
             fetch(`https://kvdb.io/${token}/?regex=%5Emsg_${rid}_&format=json&values=true`).catch(err => {
-                dialog.innerHTML = curLang.network_error;
-                dialog.cancel = "";
-                dialog.visible = true;
+                msgBox(curLang.network_error);
                 return Promise.reject();
             }).then(r => r.json()).then(r => {
                 r.forEach(i => {
                     let data = JSON.parse(i[1]);
-                    appendMsg({
-                        username: data.username,
-                        content: data.content,
-                        type: data.type
-                    }, data.username === username ? 'right' : 'left');
+                    if (password) {
+                        aes.decode(data.content).then(txt => {
+                            data.content = txt;
+                            appendMsg({
+                                username: data.username,
+                                content: data.content,
+                                type: data.type
+                            }, data.username === username ? 'right' : 'left');
+                        })
+                    } else {
+                        appendMsg({
+                            username: data.username,
+                            content: data.content,
+                            type: data.type
+                        }, data.username === username ? 'right' : 'left');
+                    }
                 });
             });
             return {
@@ -389,12 +421,24 @@
                         timestamp: new Date().getTime()
                     };
                     appendMsg(msg, "right");
-                    socket.send(JSON.stringify(msg));
-                    fetch(`https://kvdb.io/${conf.token}/msg_${rid}_${msg.timestamp}`, {
-                        'method': 'POST', 'body': JSON.stringify(msg)
-                    }).then(r => {
-                        if (typeof callback === 'function') callback(msg.timestamp);
-                    });
+                    if (password) {
+                        aes.encode(msg.content).then(ed => {
+                            msg.content = ed;
+                            socket.send(JSON.stringify(msg));
+                            fetch(`https://kvdb.io/${conf.token}/msg_${rid}_${msg.timestamp}`, {
+                                'method': 'POST', 'body': JSON.stringify(msg)
+                            }).then(r => {
+                                if (typeof callback === 'function') callback(msg.timestamp);
+                            });
+                        })
+                    } else {
+                        socket.send(JSON.stringify(msg));
+                        fetch(`https://kvdb.io/${conf.token}/msg_${rid}_${msg.timestamp}`, {
+                            'method': 'POST', 'body': JSON.stringify(msg)
+                        }).then(r => {
+                            if (typeof callback === 'function') callback(msg.timestamp);
+                        });
+                    }
                 },
             }
         }
@@ -403,63 +447,90 @@
             if (isWx() || isQQ()) header.style.display = 'none';
             initLanguage().then(res => {
                 let username = localStorage.getItem("username");
-                if (!username) {
-                    init();
-                } else {
-                    loadConf(location.hash.substr(1)).then(r => {
-                        chatConf.room = r.room;
-                        if (r.room > 1) {
-                            setTitle(r.name + ' - ' + curLang.title);
-                        }
-                        chat = chat = SimpleChat(username, chatConf);
-                    }).catch(err => {
-
-                    });
-                }
+                initUsername(username);
             }).catch(err => {
+                msgBox(curLang.network_error);
+            });
+        };
 
+        window.fu = function () {
+            createConf('我信仰帅副', '我信仰帅副').then(r => {
+                console.log(r);
             });
         };
 
         window.addEventListener('hashchange', function (e) {
             chat.close();
             let username = localStorage.getItem("username");
-            if (!username) {
-                init();
-            } else {
-                loadConf(location.hash.substr(1)).then(r => {
-                    chatConf.room = r.room;
-                    if (r.room > 1) {
-                        setTitle(r.name + ' - ' + curLang.title);
-                    }
-                    chat = chat = SimpleChat(username, chatConf);
-                }).catch(err => {
-
-                });
-            }
+            initUsername(username);
         });
 
-        function init() {
-            dialog.title = curLang.prompt_username;
-            dialog.innerHTML = '<input id="username" type="text" class="input-text" style="height: 32px;width: 300px;">';
-            let txt_username = document.getElementById('username');
-            dialog.show(e => {
-                let username = txt_username.value;
-                if (username) {
-                    localStorage.setItem("username", username);
-                    loadConf(location.hash.substr(1)).then(r => {
-                        chatConf.room = r.room;
-                        setTitle(r.name + ' - ' + curLang.title);
-                        chat = chat = SimpleChat(username, chatConf);
-                    }).catch(err => {
+        function initUsername(curUsername) {
+            if (!curUsername) {
+                dialog.title = curLang.prompt_username;
+                dialog.innerHTML = '<input id="username" type="text" class="input-text" style="height: 32px;width: 300px;">';
+                let txt_username = document.getElementById('username');
+                dialog.show(e => {
+                    let username = txt_username.value;
+                    if (username) {
+                        localStorage.setItem("username", username);
+                        initChat(username);
+                    } else {
+                        initUsername();
+                    }
+                }, e => {
+                    initUsername();
+                });
+            } else {
+                initChat(curUsername);
+            }
+        }
 
-                    });
-                } else {
-                    init();
+        function initChat(username) {
+            let hash = location.hash.substr(1);
+            loadConf(hash).then(r => {
+                chatConf.room = r.room;
+                if (r.room > 1) {
+                    setTitle(`${r.name} - ${curLang.title}`);
                 }
-            }, e => {
-                init();
+                if (r.password) {
+                    let password = localStorage.getItem(`hash_${hash}`);
+                    initPassword(hash, username, r.password, password);
+                } else {
+                    chat = SimpleChat(username, chatConf);
+                }
+            }).catch(err => {
+                msgBox(curLang.network_error);
             });
+        }
+
+        function initPassword(hash, username, passHash, password) {
+            if (!password) {
+                dialog.title = curLang.prompt_password;
+                dialog.innerHTML = '<input id="password" type="text" class="input-text" style="height: 32px;width: 300px;">';
+                let txt_password = document.getElementById('password');
+                dialog.show(e => {
+                    let password = txt_password.value;
+                    if (password) {
+                        sha256(password).then(checkHash => {
+                            if (checkHash === passHash) {
+                                localStorage.setItem(`hash_${hash}`, password);
+                                chatConf.password = password;
+                                chat = SimpleChat(username, chatConf);
+                            } else {
+                                initPassword(hash, username, passHash);
+                            }
+                        });
+                    } else {
+                        initPassword(hash, username, passHash);
+                    }
+                }, e => {
+                    initPassword(hash, username, passHash);
+                });
+            } else {
+                chatConf.password = password;
+                chat = SimpleChat(username, chatConf);
+            }
         }
 
         btn_send.addEventListener('click', _ => {
@@ -524,6 +595,12 @@
             s.play();
         };
 
+        function msgBox(msg) {
+            dialog.innerHTML = msg;
+            dialog.cancel = "";
+            dialog.visible = true;
+        }
+
         function isWx() {
             let ua = navigator.userAgent.toLowerCase();
             return !!ua.match(/micromessenger/i);
@@ -536,6 +613,69 @@
 
         function getRandom() {
             return Math.random().toString(32).substring(2, 5) + Math.random().toString(32).substring(2, 5);
+        }
+
+        async function AES(password) {
+            let passKey = makeKey64(await sha256(makeKey64(password)));
+            let aesKey = hexStringToUint8Array(passKey);
+            let aesConf = {name: 'aes-cbc', iv: hexStringToUint8Array("000102030405060708090a0b0c0d0e0f")};
+            let key = await crypto.subtle.importKey('raw', aesKey, aesConf, false, ['encrypt', 'decrypt']);
+            return {
+                encode: async function (content) {
+                    let data = new TextEncoder().encode(content);
+                    let encrypt = await crypto.subtle.encrypt(aesConf, key, data);
+                    return bytesToHexString(encrypt)
+                },
+                decode: async function (content) {
+                    let data = hexStringToUint8Array(content);
+                    let decrypt = await crypto.subtle.decrypt(aesConf, key, data);
+                    return new TextDecoder("UTF-8").decode(new Uint8Array(decrypt));
+                }
+            };
+        }
+
+        async function sha256(password) {
+            return bytesToHexString(await crypto.subtle.digest('SHA-256', (new TextEncoder().encode(password))));
+        }
+
+        function makeKey64(password) {
+            let k = password;
+            let n = 0;
+            if (password.length < 32) {
+                n = Math.floor(32 / password.length);
+                for (let i = 0; i <= n; i++) {
+                    k += password;
+                }
+            }
+            k = k.substr(0, 32);
+            return bytesToHexString(new TextEncoder().encode(k));
+        }
+
+        function hexStringToUint8Array(hexString) {
+            if (hexString.length % 2 !== 0)
+                throw "Invalid hexString";
+            let arrayBuffer = new Uint8Array(hexString.length / 2);
+            for (let i = 0; i < hexString.length; i += 2) {
+                let byteValue = parseInt(hexString.substr(i, 2), 16);
+                if (isNaN(byteValue))
+                    throw "Invalid hexString";
+                arrayBuffer[i / 2] = byteValue;
+            }
+            return arrayBuffer;
+        }
+
+        function bytesToHexString(bytes) {
+            if (!bytes)
+                return null;
+            bytes = new Uint8Array(bytes);
+            let hexBytes = [];
+            for (let i = 0; i < bytes.length; ++i) {
+                let byteString = bytes[i].toString(16);
+                if (byteString.length < 2)
+                    byteString = "0" + byteString;
+                hexBytes.push(byteString);
+            }
+            return hexBytes.join("");
         }
     })();
 </script>

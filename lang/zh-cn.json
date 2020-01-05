@@ -6,6 +6,7 @@
   "voice": "语音",
   "send": "发送",
   "prompt_username": "请输入用户名",
+  "prompt_password": "请输入密码",
   "confirm_picture": "是否发送图片",
   "input_voice": "请输入要转语音的文本",
   "play_voice": "点击播放",

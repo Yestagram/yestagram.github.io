@@ -6,6 +6,7 @@
   "voice": "Voice",
   "send": "Send",
   "prompt_username": "Enter your username",
+  "prompt_password": "Enter the password",
   "confirm_picture": "Do you want to send this picture?",
   "input_voice": "Enter the text to convert into speech.",
   "play_voice": "Click to play",
