@@ -220,7 +220,7 @@
     </style>
 </head>
 <body>
-<div class="title-bar">Yestagram(Beta)</div>
+<div class="title-bar">Yestagram</div>
 <div id="msg_container" style="margin-bottom: 100px;">
 </div>
 <div class="bottom-bar">
@@ -244,8 +244,14 @@
         let btn_tts = document.getElementById('btn_tts');
         let btn_send = document.getElementById('btn_send');
         let chat = null;
+
+        let jsonBox = 'https://jsonbox.io/yestagram_chat_room_config/';
+        let reqHead = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
         let chatConf = {
-            token: 'Vuxz6DopRS8Y9GUWXLhJCN',
+            token: 'Lne6vvnRhChB2tQC51jHmh',
             room: 1,
             access_token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImRjMjI1NjQ5MTE0MGYzYjI1MjdmY2VmOTk3NWI4YTE1NTk1NDIyZmUyMGY0YmZjZjFmYjUxZDVmZjllZWQxNzhkNmUyNTNhM2Q1NjFkYzBiIn0.eyJhdWQiOiI4IiwianRpIjoiZGMyMjU2NDkxMTQwZjNiMjUyN2ZjZWY5OTc1YjhhMTU1OTU0MjJmZTIwZjRiZmNmMWZiNTFkNWZmOWVlZDE3OGQ2ZTI1M2EzZDU2MWRjMGIiLCJpYXQiOjE1NzgyMTA5MjAsIm5iZiI6MTU3ODIxMDkyMCwiZXhwIjoxNjA5ODMzMzIwLCJzdWIiOiIyODIiLCJzY29wZXMiOltdfQ.pcb5D1EOgBQixrgRoo-A69WxhQxsnD-OChw6D0HcOVcR2fToM5M28zn4Bo3Ljf4-3hLn7ZVOvB2zDNCptXkDZJkBpmqcnDHALARskYVKEN71lXBRUyqk53lLcJUQCBXxHIZgUdxGlbiPrvFbYPCkZEE0KQ4WTnC9inCNFyL36fMHc1hED2gMYDBJg5lW6Yb1ooKHhIoOIFSaXHWKVbXa2WDMQxy0e9ClqQSKFfgElNNBb8CsvYtfYkUe-Ba0akg0_jn8y0Pjgtk-i5Uw0jEaUbitga5tau5itzUkYG0-GPV3kdgPYAr55t7efJ8D5u45pqbxP7GJepCWdc8iWP1qnzhwuEjOdG8Z2h2OkhpeHiIUuVuL7lIMygUgKU3_sIHEwH6YGn5YDc9iBDQHZmuJM0FN1aKn1Fbfd6bSHdBb3Vn8EI0GcGuxJt-XZi-hgUGy-8Xr0L0c_Dt9uxFO9-9pmESXJ7yJfqRHJG2sK6nojhFKOhWrCvb5_iRqCs_DMHKy5LqP2ZYx9NR7e5INnW6Z9Xhdhh8I0TIC1IECUVsCTWBy0ZhtlPWRbB7nhFENpl8023h4cstxfVsvxTZa6wK7WadZh_KSbEiaVW0XWijBL3zYyDuH55onTi1HziABIKWzpvLbriBPrEs-jGFyHFcIheHbDjyt1cUF8TNAEPXXIPs'
         };
@@ -266,6 +272,41 @@
 
         let curLang = {};
 
+        async function createConf(roomName) {
+            let roomId = getRandom();
+            let roomNum = +(await (await fetch(`${jsonBox}free/5e11e2d77385170017b237b6`)).json()).length;
+            roomNum++;
+            let created = await (await fetch(`${jsonBox}${roomId}`, {
+                'method': 'POST', 'body': JSON.stringify({
+                    name: roomName,
+                    room: roomNum,
+                }), headers: reqHead,
+            })).json();
+            let updated = await (await fetch(`${jsonBox}free/5e11e2d77385170017b237b6`, {
+                'method': 'PUT', 'body': JSON.stringify({length: roomNum})
+                , headers: reqHead,
+            })).json();
+            if (created._id && updated.message) {
+                return {id: roomId, room: roomNum};
+            } else {
+                return {room: 1};
+            }
+        }
+
+        async function loadConf(hash) {
+            if (!hash) {
+                return {room: 1,}
+            } else {
+                let json = await (await fetch(`${jsonBox}${hash}`)).json();
+                if (Array.isArray(json) && json.length > 0) {
+                    let conf = json[0];
+                    return {name: conf.name, room: conf.room,}
+                } else {
+                    return {room: 1,}
+                }
+            }
+        }
+
         function initLanguage() {
             let languages = ['zh-cn', 'en-us'];
             let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
@@ -273,8 +314,7 @@
             return new Promise(((resolve, reject) => {
                 fetch('lang/' + languageCode + '.json').then(r => r.json()).then(r => {
                     curLang = r;
-                    document.title = curLang.title;
-                    header.innerText = curLang.title;
+                    setTitle(curLang.title);
                     btn_pic.innerText = curLang.picture;
                     btn_tts.innerText = curLang.voice;
                     btn_send.innerText = curLang.send;
@@ -285,6 +325,11 @@
                     reject(err);
                 });
             }));
+        }
+
+        function setTitle(title) {
+            document.title = title;
+            header.innerText = title;
         }
 
         function appendMsg(msg, pos) {
@@ -318,7 +363,7 @@
                 let msg = JSON.parse(e.data);
                 appendMsg(msg, "left");
             };
-            fetch(`https://kvdb.io/${token}/?regex=%5Emsg_&format=json&values=true`).catch(err => {
+            fetch(`https://kvdb.io/${token}/?regex=%5Emsg_${rid}_&format=json&values=true`).catch(err => {
                 dialog.innerHTML = curLang.network_error;
                 dialog.cancel = "";
                 dialog.visible = true;
@@ -334,7 +379,9 @@
                 });
             });
             return {
-                send: function (content, type, callback) {
+                close: function () {
+                    socket.close();
+                }, send: function (content, type, callback) {
                     let msg = {
                         username: username,
                         content: content,
@@ -343,12 +390,12 @@
                     };
                     appendMsg(msg, "right");
                     socket.send(JSON.stringify(msg));
-                    fetch("https://kvdb.io/" + conf.token + "/msg_" + msg.timestamp, {
+                    fetch(`https://kvdb.io/${conf.token}/msg_${rid}_${msg.timestamp}`, {
                         'method': 'POST', 'body': JSON.stringify(msg)
                     }).then(r => {
                         if (typeof callback === 'function') callback(msg.timestamp);
                     });
-                }
+                },
             }
         }
 
@@ -359,12 +406,38 @@
                 if (!username) {
                     init();
                 } else {
-                    chat = chat = SimpleChat(username, chatConf);
+                    loadConf(location.hash.substr(1)).then(r => {
+                        chatConf.room = r.room;
+                        if (r.room > 1) {
+                            setTitle(r.name + ' - ' + curLang.title);
+                        }
+                        chat = chat = SimpleChat(username, chatConf);
+                    }).catch(err => {
+
+                    });
                 }
             }).catch(err => {
 
             });
         };
+
+        window.addEventListener('hashchange', function (e) {
+            chat.close();
+            let username = localStorage.getItem("username");
+            if (!username) {
+                init();
+            } else {
+                loadConf(location.hash.substr(1)).then(r => {
+                    chatConf.room = r.room;
+                    if (r.room > 1) {
+                        setTitle(r.name + ' - ' + curLang.title);
+                    }
+                    chat = chat = SimpleChat(username, chatConf);
+                }).catch(err => {
+
+                });
+            }
+        });
 
         function init() {
             dialog.title = curLang.prompt_username;
@@ -374,7 +447,13 @@
                 let username = txt_username.value;
                 if (username) {
                     localStorage.setItem("username", username);
-                    chat = SimpleChat(username, chatConf)
+                    loadConf(location.hash.substr(1)).then(r => {
+                        chatConf.room = r.room;
+                        setTitle(r.name + ' - ' + curLang.title);
+                        chat = chat = SimpleChat(username, chatConf);
+                    }).catch(err => {
+
+                    });
                 } else {
                     init();
                 }
@@ -453,6 +532,10 @@
         function isQQ() {
             let ua = navigator.userAgent.toLowerCase();
             return !!ua.match(/mqqbrowser|qzone|qqbrowser/i);
+        }
+
+        function getRandom() {
+            return Math.random().toString(32).substring(2, 5) + Math.random().toString(32).substring(2, 5);
         }
     })();
 </script>
