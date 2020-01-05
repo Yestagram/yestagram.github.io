@@ -1,4 +1,4 @@
-const CATCH_VER = 'v6';
+const CATCH_VER = 'v7';
 self.addEventListener('install', function (event) {
     let languages = ['zh-cn', 'en-us'];
     let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
