@@ -242,6 +242,7 @@
         let dialog = document.getElementById('dialog');
         let btn_pic = document.getElementById('btn_pic');
         let btn_tts = document.getElementById('btn_tts');
+        let btn_send = document.getElementById('btn_send');
         let chat = null;
         let chatConf = {
             token: 'Vuxz6DopRS8Y9GUWXLhJCN',
@@ -250,8 +251,12 @@
         };
 
         if ('serviceWorker' in navigator) {
-            let sw = '/sw.js';
-            let scope = '/';
+            let sw = '/yestagram.github.io/sw.js';
+            let scope = '/yestagram.github.io/';
+            if (location.href.indexOf('/OtenkiGirl/') === -1) {
+                sw = '/sw.js';
+                scope = '/';
+            }
             navigator.serviceWorker.register(sw, {scope: scope}).then(res => {
                 console.log('ServiceWorker Init');
             }).catch(err => {
@@ -259,14 +264,28 @@
             })
         }
 
-        let curLang = {
-            "title": "Yestagram",
-            "ok": "确定",
-            "cancel": "取消",
-            "picture": "图片",
-            "voice": "语音",
-            "network_error": "网络错误,请检查网络连接",
-        };
+        let curLang = {};
+
+        function initLanguage() {
+            let languages = ['zh-cn', 'en-us'];
+            let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
+            if (languages.indexOf(languageCode) === -1) languageCode = 'zh-cn';
+            return new Promise(((resolve, reject) => {
+                fetch('lang/' + languageCode + '.json').then(r => r.json()).then(r => {
+                    curLang = r;
+                    document.title = curLang.title;
+                    header.innerText = curLang.title;
+                    btn_pic.innerText = curLang.picture;
+                    btn_tts.innerText = curLang.voice;
+                    btn_send.innerText = curLang.send;
+                    dialog.ok = curLang.ok;
+                    dialog.cancel = curLang.cancel;
+                    resolve({});
+                }).catch(err => {
+                    reject(err);
+                });
+            }));
+        }
 
         function appendMsg(msg, pos) {
             let message = document.createElement('div');
@@ -280,10 +299,10 @@
                     message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble">${msg.content}</div>`;
                     break;
                 case "tts":
-                    message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble"><button class="btn-play" onclick="playTTS('${msg.content}')">▶</button> 点击播放</div>`;
+                    message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble"><button class="btn-play" onclick="playTTS('${msg.content}')">▶</button> ${curLang.play_voice}</div>`;
                     break;
                 default:
-                    message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble">未知的消息类型</div>`;
+                    message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble">${curLang.type_unknown}</div>`;
                     break;
             }
             msg_container.append(message);
@@ -299,8 +318,12 @@
                 let msg = JSON.parse(e.data);
                 appendMsg(msg, "left");
             };
-            fetch(`https://kvdb.io/${token}/?regex=%5Emsg_&format=json&values=true`)
-                .then(r => r.json()).then(r => {
+            fetch(`https://kvdb.io/${token}/?regex=%5Emsg_&format=json&values=true`).catch(err => {
+                dialog.innerHTML = curLang.network_error;
+                dialog.cancel = "";
+                dialog.visible = true;
+                return Promise.reject();
+            }).then(r => r.json()).then(r => {
                 r.forEach(i => {
                     let data = JSON.parse(i[1]);
                     appendMsg({
@@ -331,16 +354,20 @@
 
         window.onload = () => {
             if (isWx() || isQQ()) header.style.display = 'none';
-            let username = localStorage.getItem("username");
-            if (!username) {
-                init();
-            } else {
-                chat = chat = SimpleChat(username, chatConf);
-            }
+            initLanguage().then(res => {
+                let username = localStorage.getItem("username");
+                if (!username) {
+                    init();
+                } else {
+                    chat = chat = SimpleChat(username, chatConf);
+                }
+            }).catch(err => {
+
+            });
         };
 
         function init() {
-            dialog.title = "输入用户名";
+            dialog.title = curLang.prompt_username;
             dialog.innerHTML = '<input id="username" type="text" class="input-text" style="height: 32px;width: 300px;">';
             let txt_username = document.getElementById('username');
             dialog.show(e => {
@@ -356,7 +383,7 @@
             });
         }
 
-        document.getElementById('btn_send').addEventListener('click', _ => {
+        btn_send.addEventListener('click', _ => {
             if (txt_msg.value.trim()) {
                 chat.send(txt_msg.value);
                 txt_msg.value = "";
@@ -368,7 +395,7 @@
         pic_file.addEventListener('change', ev => {
             if (ev.target.files.length > 0) {
                 let url = window.URL.createObjectURL(ev.target.files[0]);
-                dialog.title = '是否发送图片';
+                dialog.title = curLang.confirm_picture;
                 dialog.innerHTML = `<img src="${url}" alt="Preview" width="300"/>`;
                 dialog.show(e => {
                     let data = new FormData();
@@ -384,7 +411,7 @@
         });
 
         btn_tts.addEventListener('click', ev => {
-            dialog.title = "输入语音文本";
+            dialog.title = curLang.input_voice;
             dialog.innerHTML = '<input id="txt_tts" type="text" class="input-text" style="height: 32px;width: 300px;">';
             let txt_tts = document.getElementById('txt_tts');
             dialog.show(e => {
@@ -420,11 +447,11 @@
 
         function isWx() {
             let ua = navigator.userAgent.toLowerCase();
-            return ua.match(/MicroMessenger/i) === 'micromessenger';
+            return !!ua.match(/micromessenger/i);
         }
 
         function isQQ() {
-            var ua = navigator.userAgent.toLowerCase();
+            let ua = navigator.userAgent.toLowerCase();
             return !!ua.match(/mqqbrowser|qzone|qqbrowser/i);
         }
     })();

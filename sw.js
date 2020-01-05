@@ -1,9 +1,12 @@
-const CATCH_VER = 'v4';
+const CATCH_VER = 'v6';
 self.addEventListener('install', function (event) {
-    let languages = ['zh-cn', 'zh-tw', 'ja', 'en-us'];
+    let languages = ['zh-cn', 'en-us'];
     let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
     if (languages.indexOf(languageCode) === -1) languageCode = 'zh-cn';
-    let baseDir = '/';
+    let baseDir = '/yestagram.github.io/';
+    if (location.href.indexOf('/yestagram.github.io/') === -1) {
+        baseDir = '/';
+    }
     event.waitUntil(
         caches.open(CATCH_VER).then(function (cache) {
             return cache.addAll([
@@ -11,6 +14,7 @@ self.addEventListener('install', function (event) {
                 baseDir + 'index.html',
                 baseDir + 'favicon.ico',
                 baseDir + 'dialog.js',
+                baseDir + 'lang/' + languageCode + '.json',
             ]);
         })
     );
