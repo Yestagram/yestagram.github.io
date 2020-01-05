@@ -390,6 +390,7 @@
                 msgBox(curLang.network_error);
                 return Promise.reject();
             }).then(r => r.json()).then(r => {
+                msg_container.innerHTML = '';
                 r.forEach(i => {
                     let data = JSON.parse(i[1]);
                     if (password) {
@@ -450,12 +451,6 @@
                 initUsername(username);
             }).catch(err => {
                 msgBox(curLang.network_error);
-            });
-        };
-
-        window.fu = function () {
-            createConf('我信仰帅副', '我信仰帅副').then(r => {
-                console.log(r);
             });
         };
 
