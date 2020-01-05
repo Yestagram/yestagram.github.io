@@ -1,4 +1,4 @@
-const CATCH_VER = 'v1';
+const CATCH_VER = 'v2';
 self.addEventListener('install', function (event) {
     let languages = ['zh-cn', 'zh-tw', 'ja', 'en-us'];
     let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
@@ -9,6 +9,7 @@ self.addEventListener('install', function (event) {
             return cache.addAll([
                 baseDir,
                 baseDir + 'index.html',
+                baseDir + 'favicon.ico',
                 baseDir + 'dialog.js',
             ]);
         })

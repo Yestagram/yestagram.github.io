@@ -1,4 +1,4 @@
-<html>
+<html lang="zh">
 <head>
     <meta charset="utf-8">
     <title>Yestagram</title>
@@ -233,6 +233,7 @@
 <script type="text/javascript">
     'use strict';
     (function () {
+        let header = document.querySelector('.title-bar');
         let msg_container = document.getElementById('msg_container');
         let txt_msg = document.getElementById('txt_msg');
         let pic_file = document.getElementById('pic_file');
@@ -255,6 +256,15 @@
                 console.log('ServiceWorker Failed')
             })
         }
+
+        let curLang = {
+            "title": "Yestagram",
+            "ok": "确定",
+            "cancel": "取消",
+            "picture": "图片",
+            "voice": "语音",
+            "network_error": "网络错误,请检查网络连接",
+        };
 
         function appendMsg(msg, pos) {
             let message = document.createElement('div');
@@ -318,6 +328,7 @@
         }
 
         window.onload = () => {
+            if (isWx() || isQQ()) header.style.display = 'none';
             let username = localStorage.getItem("username");
             if (!username) {
                 init();
@@ -403,6 +414,16 @@
         window.playTTS = function (text) {
             let s = new Audio(`https://tts.baidu.com/text2audio?tex=${text}&cuid=baike&lan=ZH&ctp=1&pdt=301&vol=9&rate=32&per=0`);
             s.play();
+        };
+
+        function isWx() {
+            let ua = navigator.userAgent.toLowerCase();
+            return ua.match(/MicroMessenger/i) === 'micromessenger';
+        }
+
+        function isQQ() {
+            var ua = navigator.userAgent.toLowerCase();
+            return !!ua.match(/mqqbrowser|qzone|qqbrowser/i);
         }
     })();
 </script>
