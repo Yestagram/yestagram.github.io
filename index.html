@@ -217,6 +217,12 @@
             border: white;
             background: white;
         }
+
+        .img-responsive {
+            display: inline-block;
+            height: auto;
+            max-width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -541,7 +547,7 @@
             if (ev.target.files.length > 0) {
                 let url = window.URL.createObjectURL(ev.target.files[0]);
                 dialog.title = curLang.confirm_picture;
-                dialog.innerHTML = `<img src="${url}" alt="Preview" width="300"/>`;
+                dialog.innerHTML = `<img src="${url}" alt="Preview" class="img-responsive"/>`;
                 dialog.show(e => {
                     let data = new FormData();
                     data.append('file', ev.target.files[0]);
