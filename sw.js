@@ -3,9 +3,11 @@ self.addEventListener('install', function (event) {
     let languages = ['zh-cn', 'en-us'];
     let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
     if (languages.indexOf(languageCode) === -1) languageCode = 'zh-cn';
-    let baseDir = '/yestagram.github.io/';
-    if (location.href.indexOf('/yestagram.github.io/') === -1) {
-        baseDir = '/';
+    let baseDir = '/';
+    if (location.href.indexOf('/yestagram.github.io/') !== -1) {
+        baseDir = '/yestagram.github.io/';
+    } else if (location.href.indexOf('/ipns/yestagram.ml/') !== -1) {
+        baseDir = '/ipns/yestagram.ml/';
     }
     event.waitUntil(
         caches.open(CATCH_VER).then(function (cache) {
