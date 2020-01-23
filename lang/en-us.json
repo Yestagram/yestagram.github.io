@@ -8,8 +8,11 @@
   "prompt_username": "Enter your username",
   "prompt_password": "Enter the password",
   "confirm_picture": "Do you want to send this picture?",
+  "confirm_video": "Do you want to send this video?",
+  "confirm_file": "Do you want to send this file?",
   "input_voice": "Enter the text to convert into speech.",
   "play_voice": "Click to play",
+  "play_video": "Click to play video",
   "type_unknown": "Unknown message type",
   "network_error": "Network error, please check it."
 }

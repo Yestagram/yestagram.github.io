@@ -253,7 +253,7 @@
     <label for="txt_msg"></label><input class="input-text" type="text" id="txt_msg" placeholder="">
     <button class="btn ok" id="btn_send">发送</button>
 </div>
-<input id="pic_file" type="file" accept="image/*" style="display: none;">
+<input id="pic_file" type="file" accept="image/*,video/*" style="display: none;">
 <bunny-dialog id="dialog" ok="确定" cancel="取消"></bunny-dialog>
 <script src="dialog.js"></script>
 <script type="text/javascript">
@@ -387,6 +387,9 @@
                     break;
                 case "tts":
                     message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble"><button class="btn-play" onclick="playTTS('${msg.content}')">▶</button> ${curLang.play_voice}</div>`;
+                    break;
+                case "video":
+                    message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble"><button class="btn-play" onclick="playVideo('${msg.content}')">▶</button> ${curLang.play_video}</div>`;
                     break;
                 default:
                     message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble">${curLang.type_unknown}</div>`;
@@ -586,7 +589,7 @@
         pic_file.addEventListener('change', ev => {
             let items = ev.target.files;
             if (items && items.length > 0) {
-                uploadPicture(items[0]);
+                uploadFile(items[0]);
             }
         });
 
@@ -602,7 +605,7 @@
                 }
             }
             if (!img) return;
-            uploadPicture(img);
+            uploadFile(img);
         });
 
         btn_tts.addEventListener('click', ev => {
@@ -640,22 +643,39 @@
             s.play();
         };
 
+        window.playVideo = function (url) {
+            dialog.title = '';
+            dialog.innerHTML = `<video src="${url}" controls preload="metadata"></video>`;
+            dialog.show();
+        };
+
         function msgBox(msg) {
             dialog.innerHTML = msg;
             dialog.cancel = "";
             dialog.visible = true;
         }
 
-        function uploadPicture(imgFile) {
-            let url = window.URL.createObjectURL(imgFile);
-            dialog.title = curLang.confirm_picture;
-            dialog.innerHTML = `<div class="preview-box"><img src="${url}" alt="Preview" class="img-responsive"/></div>`;
+        function uploadFile(file) {
+            let url = window.URL.createObjectURL(file);
+            let msgType = 'file';
+            if (file.type.startsWith('image')) {
+                msgType = 'image';
+                dialog.title = curLang.confirm_picture;
+                dialog.innerHTML = `<div class="preview-box"><img src="${url}" alt="Preview" class="img-responsive"/></div>`;
+            } else if (file.type.startsWith('video')) {
+                msgType = 'video';
+                dialog.title = curLang.confirm_video;
+                dialog.innerHTML = '';
+            } else {
+                dialog.title = curLang.confirm_file;
+                dialog.innerHTML = '';
+            }
             dialog.show(e => {
                 let data = new FormData();
-                data.append('file', imgFile);
+                data.append('file', file);
                 fetch("https://api.globalupload.io/transport/add", {method: 'post', mode: 'cors', body: data,})
                     .then(res => res.json()).then(res => {
-                    chat.send('https://ipfs.globalupload.io/' + res.Hash, 'image');
+                    chat.send('https://ipfs.globalupload.io/' + res.Hash, msgType);
                 })
             }, e => {
                 pic_file.value = '';

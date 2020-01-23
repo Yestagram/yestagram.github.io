@@ -8,8 +8,11 @@
   "prompt_username": "请输入用户名",
   "prompt_password": "请输入密码",
   "confirm_picture": "是否发送图片",
+  "confirm_video": "是否发送视频",
+  "confirm_file": "是否发送文件",
   "input_voice": "请输入要转语音的文本",
   "play_voice": "点击播放",
+  "play_video": "点击播放视频",
   "type_unknown": "未知的消息类型",
   "network_error": "网络错误,请检查网络连接"
 }
