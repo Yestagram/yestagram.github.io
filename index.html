@@ -645,7 +645,7 @@
 
         window.playVideo = function (url) {
             dialog.title = '';
-            dialog.innerHTML = `<video src="${url}" controls preload="metadata"></video>`;
+            dialog.innerHTML = `<video src="${url}" controls preload="metadata" style="max-height: 500px"></video>`;
             dialog.show();
         };
 
