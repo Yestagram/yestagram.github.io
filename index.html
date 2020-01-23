@@ -115,6 +115,16 @@
             flex-direction: row-reverse;
         }
 
+        .notification {
+            text-align: center;
+        }
+
+        .notification span {
+            background: #ccc;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
         .avatar {
             width: 48px;
             height: 48px;
@@ -255,6 +265,7 @@
         let btn_tts = document.getElementById('btn_tts');
         let btn_send = document.getElementById('btn_send');
         let chat = null;
+        let prevMsg = null;
 
         let jsonBox = 'https://jsonbox.io/yestagram_chat_room_config/';
         let reqHead = {
@@ -378,7 +389,14 @@
                     message.innerHTML = `<span>${msg.username}</span>${avatar}<div class="bubble">${curLang.type_unknown}</div>`;
                     break;
             }
+            if (!prevMsg || (prevMsg && msg.timestamp && prevMsg.timestamp && msg.timestamp - prevMsg.timestamp > 300000)) {
+                let timeSpan = document.createElement('div');
+                timeSpan.classList.add('notification');
+                timeSpan.innerHTML = '<span>' + getFriendlyTime(msg.timestamp) + '</span>';
+                msg_container.append(timeSpan)
+            }
             msg_container.append(message);
+            prevMsg = msg;
             message.scrollIntoView();
         }
 
@@ -419,14 +437,16 @@
                             appendMsg({
                                 username: data.username,
                                 content: data.content,
-                                type: data.type
+                                type: data.type,
+                                timestamp: data.timestamp,
                             }, data.username === username ? 'right' : 'left');
                         })
                     } else {
                         appendMsg({
                             username: data.username,
                             content: data.content,
-                            type: data.type
+                            type: data.type,
+                            timestamp: data.timestamp,
                         }, data.username === username ? 'right' : 'left');
                     }
                 });
@@ -647,6 +667,25 @@
         function isQQ() {
             let ua = navigator.userAgent.toLowerCase();
             return !!ua.match(/mqqbrowser|qzone|qqbrowser/i);
+        }
+
+        function getFriendlyTime(timestamp) {
+            let now = new Date();
+            let t = new Date(timestamp);
+            let z = (n) => ('' + n).length > 1 ? '' + n : '0' + n;
+            let millieSecond = now - t;
+            let m = z(t.getHours()) + ':' + z(t.getMinutes());
+            let d = (t.getMonth() + 1) + '-' + t.getDate();
+            let y = t.getFullYear();
+            if (millieSecond <= 1000 * 3600 * 24 && now.getDate() === t.getDate()) {
+                return m;
+            } else {
+                if (now.getFullYear() !== y) {
+                    return y + '-' + d + ' ' + m;
+                } else {
+                    return d + ' ' + m;
+                }
+            }
         }
 
         function getRandom() {
