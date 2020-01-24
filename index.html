@@ -249,11 +249,11 @@
 </div>
 <div class="bottom-bar">
     <button class="btn" id="btn_pic">图片</button>
-    <button class="btn" id="btn_tts">语音</button>
+    <button class="btn" id="btn_video">视频</button>
     <label for="txt_msg"></label><input class="input-text" type="text" id="txt_msg" placeholder="">
     <button class="btn ok" id="btn_send">发送</button>
 </div>
-<input id="pic_file" type="file" accept="image/*,video/*" style="display: none;">
+<input id="file_content" type="file" accept="image/*" style="display: none;">
 <bunny-dialog id="dialog" ok="确定" cancel="取消"></bunny-dialog>
 <script src="dialog.js"></script>
 <script type="text/javascript">
@@ -262,10 +262,10 @@
         let header = document.querySelector('.title-bar');
         let msg_container = document.getElementById('msg_container');
         let txt_msg = document.getElementById('txt_msg');
-        let pic_file = document.getElementById('pic_file');
+        let file_content = document.getElementById('file_content');
         let dialog = document.getElementById('dialog');
         let btn_pic = document.getElementById('btn_pic');
-        let btn_tts = document.getElementById('btn_tts');
+        let btn_video = document.getElementById('btn_video');
         let btn_send = document.getElementById('btn_send');
         let chat = null;
         let prevMsg = null;
@@ -358,7 +358,7 @@
                     curLang = r;
                     setTitle(curLang.title);
                     btn_pic.innerText = curLang.picture;
-                    btn_tts.innerText = curLang.voice;
+                    btn_video.innerText = curLang.video;
                     btn_send.innerText = curLang.send;
                     dialog.ok = curLang.ok;
                     dialog.cancel = curLang.cancel;
@@ -584,9 +584,17 @@
             }
         });
 
-        btn_pic.addEventListener('click', _ => pic_file.click());
+        btn_pic.addEventListener('click', _ => {
+            file_content.accept = 'image/*';
+            file_content.click()
+        });
 
-        pic_file.addEventListener('change', ev => {
+        btn_video.addEventListener('click', ev => {
+            file_content.accept = 'video/*';
+            file_content.click()
+        });
+
+        file_content.addEventListener('change', ev => {
             let items = ev.target.files;
             if (items && items.length > 0) {
                 uploadFile(items[0]);
@@ -608,18 +616,6 @@
             uploadFile(img);
         });
 
-        btn_tts.addEventListener('click', ev => {
-            dialog.title = curLang.input_voice;
-            dialog.innerHTML = '<input id="txt_tts" type="text" class="input-text" style="height: 32px;width: 300px;">';
-            let txt_tts = document.getElementById('txt_tts');
-            dialog.show(e => {
-                let tts = txt_tts.value;
-                if (tts && tts.trim()) {
-                    chat.send(tts.trim(), 'tts');
-                }
-            });
-        });
-
         txt_msg.addEventListener('keypress', ev => {
             let c = ev.which || ev.keyCode;
             if (c === 13 && txt_msg.value.trim()) {
@@ -630,12 +626,12 @@
 
         txt_msg.addEventListener('blur', ev => {
             btn_pic.style.display = '';
-            btn_tts.style.display = '';
+            btn_video.style.display = '';
         });
 
         txt_msg.addEventListener('focus', ev => {
             btn_pic.style.display = 'none';
-            btn_tts.style.display = 'none';
+            btn_video.style.display = 'none';
         });
 
         window.playTTS = function (text) {
@@ -646,7 +642,11 @@
         window.playVideo = function (url) {
             dialog.title = '';
             dialog.innerHTML = `<video src="${url}" controls preload="metadata" style="max-height:500px;max-width:100%;"></video>`;
-            dialog.show();
+            dialog.show(e => {
+                dialog.innerHTML = ''
+            }, e => {
+                dialog.innerHTML = ''
+            });
         };
 
         function msgBox(msg) {
@@ -678,7 +678,7 @@
                     chat.send('https://ipfs.globalupload.io/' + res.Hash, msgType);
                 })
             }, e => {
-                pic_file.value = '';
+                file_content.value = '';
             });
         }
 
