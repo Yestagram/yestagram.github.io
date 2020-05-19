@@ -284,10 +284,10 @@
         if ('serviceWorker' in navigator) {
             let sw = '/sw.js';
             let scope = '/';
-            if (location.href.indexOf('/yestagram.github.io/') !== -1) {
+            if (location.pathname.indexOf('/yestagram.github.io/') !== -1) {
                 sw = '/yestagram.github.io/sw.js';
                 scope = '/yestagram.github.io/';
-            } else if (location.href.indexOf('/ipns/yestagram.ml/') !== -1) {
+            } else if (location.pathname.indexOf('/ipns/yestagram.ml/') !== -1) {
                 sw = '/ipns/yestagram.ml/sw.js';
                 scope = '/ipns/yestagram.ml/';
             }

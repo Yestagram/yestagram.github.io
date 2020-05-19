@@ -1,12 +1,12 @@
-const CATCH_VER = 'v21';
+const CATCH_VER = 'v22';
 self.addEventListener('install', function (event) {
     let languages = ['zh-cn', 'en-us'];
     let languageCode = (navigator.language || 'zh-cn').toLocaleLowerCase();
     if (languages.indexOf(languageCode) === -1) languageCode = 'zh-cn';
     let baseDir = '/';
-    if (location.href.indexOf('/yestagram.github.io/') !== -1) {
+    if (location.pathname.indexOf('/yestagram.github.io/') !== -1) {
         baseDir = '/yestagram.github.io/';
-    } else if (location.href.indexOf('/ipns/yestagram.ml/') !== -1) {
+    } else if (location.pathname.indexOf('/ipns/yestagram.ml/') !== -1) {
         baseDir = '/ipns/yestagram.ml/';
     }
     event.waitUntil(
