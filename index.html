@@ -672,10 +672,10 @@
             }
             dialog.show(e => {
                 let data = new FormData();
-                data.append('file', file);
-                fetch("https://api.globalupload.io/transport/add", {method: 'post', mode: 'cors', body: data,})
+                data.append('image', file);
+                fetch("https://yespic.vercel.app/ipfs/upload", {method: 'post', mode: 'cors', body: data,})
                     .then(res => res.json()).then(res => {
-                    chat.send('https://ipfs.globalupload.io/' + res.Hash, msgType);
+                    chat.send('https://yespic.vercel.app' + res.url, msgType);
                 })
             }, e => {
                 file_content.value = '';
