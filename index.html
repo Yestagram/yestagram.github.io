@@ -280,7 +280,7 @@
             room: 1,
             access_token: 'SWyYefmQWoweKIMjoD4f9QJJ8mMIJNsjL2g0xv465uXZ9WBoigsFhJNw6x44'
         };
-
+/*
         if ('serviceWorker' in navigator) {
             let sw = '/sw.js';
             let scope = '/';
@@ -297,7 +297,7 @@
                 console.log('ServiceWorker Failed')
             })
         }
-
+*/
         let curLang = {};
 
         window.cf = function (roomName, password) {
@@ -418,7 +418,7 @@
                     aes = a;
                 })
             }
-            let socket = new WebSocket(`wss://connect.websocket.in/v3/${rid}?apiKey=${access_token}`);
+            let socket = new WebSocket(`wss://bunny-room.deno.dev/chat/${rid}?apiKey=${access_token}`);
             socket.onmessage = function (e) {
                 let msg = JSON.parse(e.data);
                 if (password) {
